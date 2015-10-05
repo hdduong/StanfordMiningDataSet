@@ -5,7 +5,7 @@
 #include <fstream>
 #include <string>
 #include <memory>
-#include <hash_map>
+#include <map>
 using namespace std;
 
 // question 1
@@ -13,66 +13,79 @@ using namespace std;
 //const float PageRankTotal = 3.0; 
 
 // question 2
-const float beta = 0.85;
-const float PageRankTotal = 3.0;
+//const double beta = 0.8;
+//const double PageRankTotal = 3.0;
 
 // question 3
-//const float beta = 1.0; 
-//const float PageRankTotal = 3.0; 
-
-struct Point{
-	int start;
-	int end;
-
-	Point(int a, int b) : start(a), end(b) {}
-};
+//const double beta = 1.0; 
+//const double PageRankTotal = 3.0; 
 
 
 
+// programming assignment
+const double beta = 0.8; //random teleporting probability of 0.2  means teleport is (1 - 0.2)
+const double PageRankTotal = 1.0;
 
 
-void ReadFile(char* filename, vector<shared_ptr<Point> >& vPoint, int* numVertex, hash_map<int, int>& vD) {
+// example from book http://infolab.stanford.edu/~ullman/mmds/ch5.pdf 5.1.6
+//const double beta = 0.8;
+//const double PageRankTotal = 1.0;
+
+
+// mOut contains src and list of des vectex
+// mIn contains des and list of src vertex
+// mVertexMap map continuous id 
+void ReadFile(char* filename, map<long int, vector<long int> >& mIn, map<long int, vector<long int> >& mOut, map<long int, long int>& mIdNature, map<long int, long int>& mIdFile) {
 	string line;
 	ifstream myfile(filename);
 
-	set<int> distinctV;
-	std::set<int>::iterator it;
+	long int a, b;
+	long int Id = 0;
 
-	int a, b;
+	map<long int, vector<long int> >::iterator mInIterator;
+	map<long int, vector<long int> >::iterator mOutIterator;
+	
+	set<long int> setV; // set order by Key
+	set<long int>::iterator idSetIt;
+
 	while (myfile >> a >> b)
 	{
-		shared_ptr<Point> newPoint(new Point(a, b));
+		setV.emplace(a);
+		setV.emplace(b);
 
-		vPoint.push_back(newPoint);
-
-		it = distinctV.find(a);
-		if (it == distinctV.end())
-			distinctV.emplace(a);
-
-		it = distinctV.find(b);
-		if (it == distinctV.end())
-			distinctV.emplace(b);
-
-		hash_map<int, int>::iterator hmIt = vD.find(a);
-		if (hmIt != vD.end()) {
-			hmIt->second += 1;
+		mOutIterator = mOut.find(a);
+		if (mOutIterator != mOut.end()) {
+			mOutIterator->second.push_back(b);
 		}
 		else {
-			vD.emplace(a, 1);
+			vector<long int> vDes;
+			vDes.push_back(b);
+
+			mOut.emplace(a, vDes);
+		}
+
+		mInIterator = mIn.find(b);
+		if (mInIterator != mIn.end()) {
+			mInIterator->second.push_back(a);
+		}
+		else {
+			vector<long int> vSrc;
+			vSrc.push_back(a);
+
+			mIn.emplace(b, vSrc);
 		}
 	}
 
-	*numVertex = distinctV.size();
-}
-
-
-
-
-void printPointVector(vector<shared_ptr<Point> >& vPoint) {
-	for (vector<shared_ptr<Point> >::iterator it = vPoint.begin(); it != vPoint.end(); it++) {
-		cout << it->get()->start << " " << it->get()->end << endl;
+	for (idSetIt = setV.begin(); idSetIt != setV.end(); idSetIt++) {
+		mIdNature.emplace(Id, *idSetIt);
+		mIdFile.emplace(*idSetIt, Id);
+		Id++;
 	}
+
 }
+
+
+
 
 
 void printIntVector(vector<int>& vInt) {
@@ -83,8 +96,8 @@ void printIntVector(vector<int>& vInt) {
 }
 
 
-void printHashMap(hash_map<int, int>& vInt) {
-	for (hash_map<int, int>::iterator it = vInt.begin(); it != vInt.end(); it++) {
+void printHashMap(map<int, int>& vInt) {
+	for (map<int, int>::iterator it = vInt.begin(); it != vInt.end(); it++) {
 		cout << it->first << " " << it->second << endl;
 	}
 
@@ -94,7 +107,7 @@ void printHashMap(hash_map<int, int>& vInt) {
 
 // copy content of src to des. Assume that src and des have the same size
 // remove content of src
-void copyMove(vector<float>& des, vector<float>& src) {
+void copyMove(vector<double>& des, vector<double>& src) {
 	while (!des.empty())
 		des.pop_back();
 
@@ -104,23 +117,20 @@ void copyMove(vector<float>& des, vector<float>& src) {
 
 
 
-
-bool IsHaveInput(vector<shared_ptr<Point> >& vPoint, int vertex) {
+// check if vertex has in-deg
+bool IsHaveInput(map<long int, vector<long int> >& mIn, long int vertex) {
 	bool hasInput = false;
 
-	for (vector<shared_ptr<Point> >::iterator itP = vPoint.begin(); itP != vPoint.end(); itP++) {
-		if (itP->get()->end == vertex) {
-			hasInput = true;
-			break;
-		}
-	}
+	map<long int, vector<long int> >::iterator it = mIn.find(vertex);
+	if (it != mIn.end())
+		hasInput = true;
 
 	return hasInput;
 }
 
 
-float DiffRank(vector<float>& currentR, vector<float>& nextR) {
-	float sum = 0.0;
+double DiffRank(vector<double>& currentR, vector<double>& nextR) {
+	double sum = 0.0;
 
 	for (int i = 0; i < nextR.size(); i++) {
 		sum += abs(currentR.at(i) - nextR.at(i));
@@ -131,51 +141,50 @@ float DiffRank(vector<float>& currentR, vector<float>& nextR) {
 
 
 
-void PageRankOneStep(vector<float>& currentR, vector<float>& nextR, hash_map<int, int>& vD, int numVertex, vector<shared_ptr<Point> >& vPoint) {
+void PageRankOneStep(vector<double>& currentR, vector<double>& nextR, map<long int, vector<long int> >& mIn, map<long int, vector<long int> >& mOut, long int numVertex, map<long int, long int>& mIdNature, map<long int, long int>& mIdFile) {
 
 
-	vector<float> tempR;
+	vector<double> tempR;
+	for (int i = 0; i < numVertex; i++) {
+		tempR.emplace_back(double(0.0));
+	}
 
-	for (int j = 0; j < currentR.size(); j++) {
+	//for (int j = 0; j < currentR.size(); j++) {
+	for (map<long int, long int>::iterator itJ = mIdFile.begin(); itJ != mIdFile.end(); itJ++) {
+		
+		long int j = itJ->first;
+		long int jNature = itJ->second;
 
-		float rpj = 0.0;
+		double rpj = 0.0;
 
-		if (!IsHaveInput(vPoint, j)) {
+		if (!IsHaveInput(mIn, j)) {
+			
 			// no in link; go to next vertex		
-			tempR.emplace_back(0.0);
+			tempR.at(jNature) = 0.0;
 			continue;
 		}
 
-		// find j as destination
-		for (vector<shared_ptr<Point> >::iterator itP = vPoint.begin(); itP != vPoint.end(); itP++) {
-			// find i that point to j
-			if (j == itP->get()->end) {
-				int i = itP->get()->start;
+		
+		vector<long int> listI = mIn.find(j)->second; // list of vertex i that has j as destination
+		
+		for (vector<long int>::iterator itI = listI.begin(); itI != listI.end(); itI++) {
+			
+			long int di = mOut.find(*itI)->second.size();
+			long int diNature = mIdFile.find(*itI)->second;
 
-				int di = vD.find(i)->second;
-
-				rpj += (beta * currentR.at(i)) / di;
-			}
+			rpj += (beta * currentR.at(diNature)) / di;
+			
 
 		}
-
-		tempR.emplace_back(rpj);
-
+		tempR.at(jNature) = rpj;
 	}
 
-	float S = 0.0;
+	double S = 0.0;
 	for (int j = 0; j < tempR.size(); j++) {
 		S += tempR.at(j);
 	}
 
-	float leak = (PageRankTotal - S) / numVertex;
-
-	/*
-	if (nextR.size() < currentR.size())
-	for (int j = 0; j < numVertex; j++) {
-	nextR.emplace_back(0.0);
-	}
-	*/
+	double leak = (PageRankTotal - S) / numVertex;
 
 	for (int j = 0; j < nextR.size(); j++) {
 		nextR.at(j) = tempR.at(j) + leak;
@@ -184,66 +193,65 @@ void PageRankOneStep(vector<float>& currentR, vector<float>& nextR, hash_map<int
 }
 
 
-void PageRankLoop(vector<float>& currentR, vector<float>& nextR, hash_map<int, int>& vD, int numVertex, vector<shared_ptr<Point> >& vPoint) {
+void PageRankLoop(vector<double>& currentR, vector<double>& nextR, map<long int, vector<long int> >& mIn, map<long int, vector<long int> >& mOut, long int numVertex, map<long int, long int>& mIdNature, map<long int, long int>& mIdFile) {
 
-	vector<float> tmpR;
-
-
-
+	vector<double> tmpR;
+	long int loopCount = 0;
 	while (1) {
-		PageRankOneStep(currentR, nextR, vD, numVertex, vPoint);
+		cout << "start at loop: " << loopCount << endl;
+
+		PageRankOneStep(currentR, nextR, mIn, mOut, numVertex, mIdNature,mIdFile);
 		copyMove(tmpR, currentR);
 		copyMove(currentR, nextR);
-		if (DiffRank(tmpR, currentR) < 0.001) break;
+		if (DiffRank(tmpR, currentR) < 0.0000001) break;
+
+		loopCount++;
 	}
 }
 
 
+void initStepVector(vector<double>& currentR, vector<double>& nextR, long int numVertex) {
+	for (int i = 0; i < numVertex; i++) {
+		currentR.emplace_back(double((double)1.0 / numVertex) );
+		nextR.emplace_back(double(0.0));
+	}
 
+}
 
 
 int main() {
 
-	hash_map<int, int> vD;
-	vector<shared_ptr<Point> > myPoint;
-	int numVertex = 0;
+	map<long int, vector<long int> > mIn;
+	map<long int, vector<long int> > mOut;
+	map<long int, long int> mIdNature;
+	map<long int, long int> mIdFile;
 
-	ReadFile("web-Google.txt", myPoint, &numVertex, vD);
+	long int numVertex = 875713;
+	//long int numVertex = 4;
+	//long int numVertex = 25000;
 
-	//printPointVector(myPoint);
-	//cout << numVertex << endl;
-	//printHashMap(vD);
+	vector<double> currentR;
+	vector<double> nextR;
 
-	// first question sum of pageRank = 3
-	vector<float> currentR;
+	initStepVector(currentR, nextR, numVertex);
 
-	//question 1
-	currentR.emplace_back(1.0);
-	currentR.emplace_back(1.0);
-	currentR.emplace_back(1.0);
+	ReadFile("web-Google.txt", mIn, mOut, mIdNature, mIdFile);
+	//ReadFile("input2.txt", mIn, mOut, mIdNature, mIdFile); // book page 5.1.6 http://infolab.stanford.edu/~ullman/mmds/ch5.pdf
+	//ReadFile("web-Google-small.txt", mIn, mOut, mIdNature, mIdFile); // test case: https://class.coursera.org/mmds-003/forum/thread?thread_id=160
+	cout << "Done with reading File" << endl;
 
-	//question 2
-	//currentR.emplace_back(0.2);
-	//currentR.emplace_back(0.4);
-	//currentR.emplace_back(0.4);
+	//PageRankOneStep(currentR, nextR, mIn, mOut, numVertex);
+	
+	PageRankLoop(currentR, nextR, mIn, mOut, numVertex, mIdNature, mIdFile);
 
+	//cout << "mIdFile[99]: " << mIdFile.find(99)->second << "value: " << nextR.at(mIdFile.find(99)->second) << endl; 
+	cout << "mIdFile[0]: " << mIdFile.find(0)->second << "value: " << nextR.at(mIdFile.find(0)->second) << endl;
+	cout << "mIdFile[99]: " << mIdFile.find(0)->second << "value: " << nextR.at(mIdFile.find(99)->second) << endl;
+	cout << "mIdFile[11342]: " << mIdFile.find(0)->second << "value: " << nextR.at(mIdFile.find(11342)->second) << endl;
+	cout << "mIdFile[824020]: " << mIdFile.find(0)->second << "value: " << nextR.at(mIdFile.find(824020)->second) << endl;
+	cout << "mIdFile[903066]: " << mIdFile.find(0)->second << "value: " << nextR.at(mIdFile.find(903066)->second) << endl;
 
-	vector<float> nextR;
-
-	nextR.emplace_back(0.0);
-	nextR.emplace_back(0.0);
-	nextR.emplace_back(0.0);
-
-	/*
-	copyMove(nextR,currentR);
-
-	printIntVector(nextR);
-	*/
-
-	//PageRankOneStep(currentR, nextR,vD, numVertex,myPoint);
-	PageRankLoop(currentR, nextR, vD, numVertex, myPoint);
-
-	cout << endl;
+	//cout << 
 
 	return 0;
 }
