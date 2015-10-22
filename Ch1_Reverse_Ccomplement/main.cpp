@@ -45,10 +45,14 @@ void reverseComplement(string *src, string *des) {
 
 void main() {
 	//string src = "AAAACCCGGT";
-	string src = "ACACAC";
+	//string src = "ACACAC";
+	//string des = "";
+
+	// quiz 1 - 4
+	string src = "GCTAGCT";
 	string des = "";
 
-	readFile2("dataset_3_2.txt", &src);
+	//readFile2("dataset_3_2.txt", &src);
 	reverseComplement(&src, &des);
 
 	ofstream myfile;

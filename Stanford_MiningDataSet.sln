@@ -11,6 +11,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Ch1_Pattern_Count", "Ch1_Pa
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Ch1_Genome_Position", "Ch1_Genome_Position\Ch1_Genome_Position.vcxproj", "{27BA58D3-7A67-4456-AAB3-D12D2DF06886}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Ch1_ClumpFinidng", "Ch1_ClumpFinidng\Ch1_ClumpFinidng.vcxproj", "{35358580-6019-479C-95FA-23F69BAF3B70}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -33,6 +35,10 @@ Global
 		{27BA58D3-7A67-4456-AAB3-D12D2DF06886}.Debug|Win32.Build.0 = Debug|Win32
 		{27BA58D3-7A67-4456-AAB3-D12D2DF06886}.Release|Win32.ActiveCfg = Release|Win32
 		{27BA58D3-7A67-4456-AAB3-D12D2DF06886}.Release|Win32.Build.0 = Release|Win32
+		{35358580-6019-479C-95FA-23F69BAF3B70}.Debug|Win32.ActiveCfg = Debug|Win32
+		{35358580-6019-479C-95FA-23F69BAF3B70}.Debug|Win32.Build.0 = Debug|Win32
+		{35358580-6019-479C-95FA-23F69BAF3B70}.Release|Win32.ActiveCfg = Release|Win32
+		{35358580-6019-479C-95FA-23F69BAF3B70}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
